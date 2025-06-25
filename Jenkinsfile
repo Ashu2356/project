@@ -11,7 +11,7 @@ pipeline {
         DB_PASS = 'admin123'
         WAR_NAME = 'LoginWebApp.war'
         TOMCAT_HOME = '/mnt/apache-tomcat-10.1.42'
-        JAVA_HOME = '/usr/lib/jvm/java-1.8.0'   // adjust if different
+        JAVA_HOME = '/usr/lib/jvm/java-1.8.0'
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
 
@@ -56,11 +56,14 @@ pipeline {
             agent { label 'slave-1' }
             steps {
                 unstash name: 'warfile'
-                sh """
-                   cp target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
-                    ${TOMCAT_HOME}/bin/shutdown.sh || true
-                    ${TOMCAT_HOME}/bin/startup.sh
-                """
+                dir('project/target') {
+                    sh """
+                        cp ${WAR_NAME} ${TOMCAT_HOME}/webapps/
+                        chmod +x ${TOMCAT_HOME}/bin/*.sh
+                        ${TOMCAT_HOME}/bin/shutdown.sh || true
+                        ${TOMCAT_HOME}/bin/startup.sh
+                    """
+                }
             }
         }
     }
