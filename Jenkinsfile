@@ -14,10 +14,11 @@ pipeline {
     }
 
     stages {
+
         stage('Clone Git Repo') {
             agent { label 'built-in' }
             steps {
-                dir("${env.WORKSPACE}/project") {
+                dir('/mnt/project') {
                     checkout scm
                 }
             }
@@ -26,7 +27,7 @@ pipeline {
         stage('Build WAR with Maven') {
             agent { label 'built-in' }
             steps {
-                dir("${env.WORKSPACE}/project") {
+                dir('/mnt/project') {
                     sh 'rm -rf ~/.m2/repository'
                     sh 'mvn clean package'
                     stash name: 'warfile', includes: 'target/*.war'
@@ -37,13 +38,12 @@ pipeline {
         stage('Configure Database Connection') {
             agent { label 'built-in' }
             steps {
-                dir("${env.WORKSPACE}/project/src/main/webapp") {
+                dir('/mnt/project/src/main/webapp') {
                     sh """
                     sed -i 's|jdbc:mysql://localhost:3306/test", "root", "root"|jdbc:mysql://${DB_URL}:3306/loginwebapp", "${DB_USER}", "${DB_PASS}"|g' userRegistration.jsp
                     """
                 }
-                // Rebuild to include updated JSP
-                dir("${env.WORKSPACE}/project") {
+                dir('/mnt/project') {
                     sh 'mvn clean package'
                     stash name: 'warfile', includes: 'target/*.war'
                 }
@@ -53,19 +53,17 @@ pipeline {
         stage('Deploy WAR on Tomcat Slave') {
             agent { label 'slave-1' }
             steps {
-                dir("${env.WORKSPACE}/project/target") {
-                    unstash 'warfile'
-                    sh """
-                        cp *.war ${TOMCAT_HOME}/webapps/
-                        chmod -R 755 ${TOMCAT_HOME}
-                        ${TOMCAT_HOME}/bin/shutdown.sh || true
-                        sleep 2
-                        ${TOMCAT_HOME}/bin/startup.sh
-                    """
-                }
+                unstash 'warfile'
+                sh """
+                    cp target/*.war ${TOMCAT_HOME}/webapps/
+                    chmod -R 755 ${TOMCAT_HOME}
+                    ${TOMCAT_HOME}/bin/shutdown.sh || true
+                    sleep 2
+                    ${TOMCAT_HOME}/bin/startup.sh
+                """
             }
         }
     }
 
-  
+    
 }
