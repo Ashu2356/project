@@ -56,7 +56,6 @@ pipeline {
         dir("${TOMCAT_HOME}/webapps") {
           unstash 'warfile'
           sh """
-            cp *.war .
             chmod -R 755 ${TOMCAT_HOME}
             ${TOMCAT_HOME}/bin/shutdown.sh || true
             ${TOMCAT_HOME}/bin/startup.sh
