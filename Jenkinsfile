@@ -53,12 +53,15 @@ stage('Deploy WAR on Tomcat Slave') {
   agent { label 'slave-1' }
   steps {
     unstash name: 'warfile'
-    sh '''
-      cp target/LoginWebApp.war /mnt/apache-tomcat-10.1.42/webapps/
-      /mnt/apache-tomcat-10.1.42/bin/startup.sh || true
-    '''
+    dir('target') {
+      sh """
+        cp ${WAR_NAME} ${TOMCAT_HOME}/webapps/
+        chmod -R 777 ${TOMCAT_HOME}
+        ${TOMCAT_HOME}/bin/shutdown.sh || true
+        ${TOMCAT_HOME}/bin/startup.sh
+      """
+    }
   }
-}
 
     }
 
