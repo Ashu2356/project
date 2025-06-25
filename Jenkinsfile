@@ -53,10 +53,9 @@ pipeline {
     stage('Deploy WAR to Tomcat (Slave)') {
       agent { label 'slave-1' }
       steps {
-        dir("${TOMCAT_HOME}/webapps") {
+        dir('/mnt/apache-tomcat-10.1.42/webapps') {
           unstash 'warfile'
           sh """
-            chmod -R 755 ${TOMCAT_HOME}
             ${TOMCAT_HOME}/bin/shutdown.sh || true
             ${TOMCAT_HOME}/bin/startup.sh
           """
