@@ -50,19 +50,17 @@ pipeline {
             }
         }
 
-        stage('Deploy WAR on Tomcat Slave') {
-            agent { label 'slave-1' }
-            steps {
-                unstash name: 'warfile'
-                dir('/mnt/apache-tomcat-10.1.42/webapps') {
-                    sh """
-                        cp /mnt/slave/workspace/copy-war-on-slave/project/target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
-                        chmod -R 777 ${TOMCAT_HOME}
-                        ${TOMCAT_HOME}/bin/shutdown.sh || true
-                        ${TOMCAT_HOME}/bin/startup.sh
-                    """
-                }
-            }
-        }
+   stage('Deploy WAR on Tomcat Slave') {
+    agent { label 'slave-1' }
+    steps {
+        unstash name: 'warfile'
+        sh """
+            cp target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
+            chmod -R 777 ${TOMCAT_HOME}
+            ${TOMCAT_HOME}/bin/shutdown.sh || true
+            ${TOMCAT_HOME}/bin/startup.sh
+        """
+    }
+}
     }
 }
