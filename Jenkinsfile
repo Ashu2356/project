@@ -6,9 +6,6 @@ pipeline {
   }
 
   environment {
-    DB_URL = 'database-1.cbqy4wmkgmg5.ap-south-1.rds.amazonaws.com'
-    DB_USER = 'admin'
-    DB_PASS = 'admin123'
     WAR_NAME = 'LoginWebApp.war'
     TOMCAT_HOME = '/mnt/apache-tomcat-10.1.42'
   }
@@ -35,30 +32,22 @@ pipeline {
       }
     }
 
-    stage('Configure Database Connection') {
-      agent { label 'built-in' }
-      steps {
-        dir('/mnt/project/src/main/webapp') {
-          sh """
-            sed -i 's|jdbc:mysql://localhost:3306/test", "root", "root"|jdbc:mysql://${DB_URL}:3306/loginwebapp", "${DB_USER}", "${DB_PASS}"|g' userRegistration.jsp
-          """
-        }
-        dir('/mnt/project') {
-          sh 'mvn clean package'
-          stash name: 'warfile', includes: 'target/*.war'
-        }
-      }
-    }
-
-    stage('Deploy WAR to Tomcat') {
+    stage('Deploy WAR to Tomcat (Slave)') {
       agent { label 'slave-1' }
       steps {
-        dir('/mnt/apache-tomcat-10.1.42/webapps') {
-          unstash name: 'warfile'
-          sh """
-            cp /mnt/slave/workspace/my-web-app/target/${WAR_NAME} .
-            ${TOMCAT_HOME}/bin/startup.sh || true
-          """
+        withEnv(["WAR_NAME=LoginWebApp.war", "TOMCAT_HOME=/mnt/apache-tomcat-10.1.42"]) {
+          dir("${TOMCAT_HOME}/webapps") {
+            unstash 'warfile'
+            sh '''
+              echo "Stopping Tomcat..."
+              $TOMCAT_HOME/bin/shutdown.sh || echo "Tomcat not running"
+              sleep 3
+              echo "Copying WAR..."
+              cp /mnt/slave/workspace/my-web-app/target/$WAR_NAME .
+              echo "Starting Tomcat..."
+              $TOMCAT_HOME/bin/startup.sh
+            '''
+          }
         }
       }
     }
