@@ -57,9 +57,7 @@ pipeline {
             steps {
                 unstash name: 'warfile'
                 sh """
-                    export JAVA_HOME=${JAVA_HOME}
-                    export PATH=\$JAVA_HOME/bin:\$PATH
-                    cp target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
+                   cp target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
                     ${TOMCAT_HOME}/bin/shutdown.sh || true
                     ${TOMCAT_HOME}/bin/startup.sh
                 """
