@@ -1,70 +1,64 @@
 pipeline {
-    agent none
+  agent none
 
-    tools {
-        maven 'apache-maven-3.9.10'
+  tools {
+    maven 'apache-maven-3.9.10'
+  }
+
+  environment {
+    DB_URL = 'database-1.cti0iqs4ugbm.ap-south-1.rds.amazonaws.com'
+    DB_USER = 'admin'
+    DB_PASS = '123456'
+    WAR_NAME = 'LoginWebApp.war'
+    TOMCAT_PATH = '/mnt/apache-tomcat-10.1.42'
+  }
+
+  stages {
+
+    stage('Clone Repo') {
+      agent { label 'built-in' }
+      steps {
+        dir('/mnt/project') {
+          checkout scm
+        }
+      }
     }
 
-    environment {
-        DB_URL = 'database-1.cbqy4wmkgmg5.ap-south-1.rds.amazonaws.com'
-        DB_USER = 'admin'
-        DB_PASS = 'admin123'
-        WAR_NAME = 'LoginWebApp.war'
-        TOMCAT_HOME = '/mnt/apache-tomcat-10.1.42'
-        JAVA_HOME = '/usr/lib/jvm/java-1.8.0'
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
+    stage('Build WAR') {
+      agent { label 'built-in' }
+      steps {
+        dir('/mnt/project') {
+          sh 'mvn clean package'
+          stash name: 'warfile', includes: 'target/*.war'
+        }
+      }
     }
 
-    stages {
-
-        stage('Clone Git Repo') {
-            agent { label 'built-in' }
-            steps {
-                dir('/mnt/project') {
-                    checkout scm
-                }
-            }
+    stage('Update DB Config') {
+      agent { label 'built-in' }
+      steps {
+        dir('/mnt/project/src/main/webapp') {
+          sh """
+          sed -i 's|jdbc:mysql://localhost:3306/test", "root", "root"|jdbc:mysql://${DB_URL}:3306/loginwebapp", "${DB_USER}", "${DB_PASS}"|g' userRegistration.jsp
+          """
         }
-
-        stage('Build WAR with Maven') {
-            agent { label 'built-in' }
-            steps {
-                dir('/mnt/project') {
-                    sh 'rm -rf ~/.m2/repository'
-                    sh 'mvn clean install'
-                    stash name: 'warfile', includes: 'target/*.war'
-                }
-            }
+        dir('/mnt/project') {
+          sh 'mvn clean package'
+          stash name: 'warfile', includes: 'target/*.war'
         }
-
-        stage('Configure Database Connection') {
-            agent { label 'built-in' }
-            steps {
-                dir('/mnt/project/src/main/webapp') {
-                    sh """
-                        sed -i 's|jdbc:mysql://localhost:3306/test", "root", "root"|jdbc:mysql://${DB_URL}:3306/loginwebapp", "${DB_USER}", "${DB_PASS}"|g' userRegistration.jsp
-                    """
-                }
-                dir('/mnt/project') {
-                    sh 'mvn clean package'
-                    stash name: 'warfile', includes: 'target/*.war'
-                }
-            }
-        }
-
-        stage('Deploy WAR on Tomcat Slave') {
-            agent { label 'slave-1' }
-            steps {
-                unstash name: 'warfile'
-                dir('project/target') {
-                    sh """
-                        cp ${WAR_NAME} ${TOMCAT_HOME}/webapps/
-                        chmod +x ${TOMCAT_HOME}/bin/*.sh
-                        ${TOMCAT_HOME}/bin/shutdown.sh || true
-                        ${TOMCAT_HOME}/bin/startup.sh
-                    """
-                }
-            }
-        }
+      }
     }
+
+    stage('Deploy to Tomcat') {
+      agent { label 'slave-1' }
+      steps {
+        unstash 'warfile'
+        sh """
+          cp target/${WAR_NAME} ${TOMCAT_PATH}/webapps/
+          ${TOMCAT_PATH}/bin/shutdown.sh || true
+          ${TOMCAT_PATH}/bin/startup.sh
+        """
+      }
+    }
+  }
 }
