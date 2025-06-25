@@ -35,7 +35,7 @@ pipeline {
       }
     }
 
-    stage('Configure DB Connection') {
+    stage('Configure Database Connection') {
       agent { label 'built-in' }
       steps {
         dir('/mnt/project/src/main/webapp') {
@@ -50,14 +50,14 @@ pipeline {
       }
     }
 
-    stage('Deploy WAR to Tomcat (Slave)') {
+    stage('Deploy WAR to Tomcat') {
       agent { label 'slave-1' }
       steps {
         dir('/mnt/apache-tomcat-10.1.42/webapps') {
-          unstash 'warfile'
+          unstash name: 'warfile'
           sh """
-            ${TOMCAT_HOME}/bin/shutdown.sh || true
-            ${TOMCAT_HOME}/bin/startup.sh
+            cp /mnt/slave/workspace/my-web-app/target/${WAR_NAME} .
+            ${TOMCAT_HOME}/bin/startup.sh || true
           """
         }
       }
