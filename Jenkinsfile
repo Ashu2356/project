@@ -50,13 +50,12 @@ pipeline {
             }
         }
 
-   stage('Deploy WAR on Tomcat Slave') {
+stage('Deploy WAR on Tomcat Slave') {
     agent { label 'slave-1' }
     steps {
         unstash name: 'warfile'
         sh """
             cp target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
-            chmod -R 777 ${TOMCAT_HOME}
             ${TOMCAT_HOME}/bin/shutdown.sh || true
             ${TOMCAT_HOME}/bin/startup.sh
         """
