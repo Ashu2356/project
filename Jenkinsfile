@@ -10,7 +10,7 @@ pipeline {
     DB_USER = 'admin'
     DB_PASS = '123456'
     WAR_NAME = 'LoginWebApp.war'
-    TOMCAT_PATH = '/mnt/apache-tomcat-10.1.42'
+    TOMCAT_HOME = '/mnt/apache-tomcat-10.1.42'
   }
 
   stages {
@@ -49,14 +49,14 @@ pipeline {
       }
     }
 
-    stage('Deploy to Tomcat') {
+    stage('Deploy to Tomcat (Slave)') {
       agent { label 'slave-1' }
       steps {
         unstash 'warfile'
         sh """
-          cp target/${WAR_NAME} ${TOMCAT_PATH}/webapps/
-          ${TOMCAT_PATH}/bin/shutdown.sh || true
-          ${TOMCAT_PATH}/bin/startup.sh
+          cp target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
+          ${TOMCAT_HOME}/bin/shutdown.sh || true
+          ${TOMCAT_HOME}/bin/startup.sh
         """
       }
     }
