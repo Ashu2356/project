@@ -11,6 +11,8 @@ pipeline {
         DB_PASS = 'admin123'
         WAR_NAME = 'LoginWebApp.war'
         TOMCAT_HOME = '/mnt/apache-tomcat-10.1.42'
+        JAVA_HOME = '/usr/lib/jvm/java-1.8.0'   // adjust if different
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
 
     stages {
@@ -40,7 +42,7 @@ pipeline {
             steps {
                 dir('/mnt/project/src/main/webapp') {
                     sh """
-                    sed -i 's|jdbc:mysql://localhost:3306/test", "root", "root"|jdbc:mysql://${DB_URL}:3306/loginwebapp", "${DB_USER}", "${DB_PASS}"|g' userRegistration.jsp
+                        sed -i 's|jdbc:mysql://localhost:3306/test", "root", "root"|jdbc:mysql://${DB_URL}:3306/loginwebapp", "${DB_USER}", "${DB_PASS}"|g' userRegistration.jsp
                     """
                 }
                 dir('/mnt/project') {
@@ -50,16 +52,18 @@ pipeline {
             }
         }
 
-stage('Deploy WAR on Tomcat Slave') {
-    agent { label 'slave-1' }
-    steps {
-        unstash name: 'warfile'
-        sh """
-            cp target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
-            ${TOMCAT_HOME}/bin/shutdown.sh || true
-            ${TOMCAT_HOME}/bin/startup.sh
-        """
-    }
-}
+        stage('Deploy WAR on Tomcat Slave') {
+            agent { label 'slave-1' }
+            steps {
+                unstash name: 'warfile'
+                sh """
+                    export JAVA_HOME=${JAVA_HOME}
+                    export PATH=\$JAVA_HOME/bin:\$PATH
+                    cp target/${WAR_NAME} ${TOMCAT_HOME}/webapps/
+                    ${TOMCAT_HOME}/bin/shutdown.sh || true
+                    ${TOMCAT_HOME}/bin/startup.sh
+                """
+            }
+        }
     }
 }
