@@ -37,7 +37,7 @@ pipeline {
         stage('Configure Database Connection') {
             agent { label 'built-in' }
             steps {
-                dir('/mnt/project') {
+                dir('/mnt/project/src/main/webapp') {
                     sh '''
                     sed -i 's|jdbc:mysql://localhost:3306/test", "root", "root"|jdbc:mysql://database-1.cbqy4wmkgmg5.ap-south-1.rds.amazonaws.com:3306/loginwebapp", "admin", "admin123"|g' userRegistration.jsp
                     '''
