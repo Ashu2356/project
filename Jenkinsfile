@@ -53,7 +53,7 @@ stage('Deploy WAR on Tomcat Slave') {
   agent { label 'slave-1' }
   steps {
     unstash name: 'warfile'
-    dir('target') {
+    dir('/mnt/apache-tomcat-10.1.42/webapps') {
       sh """
         cp ${WAR_NAME} ${TOMCAT_HOME}/webapps/
         chmod -R 777 ${TOMCAT_HOME}
