@@ -49,18 +49,17 @@ pipeline {
                 }
             }
         }
-
-     stage('Deploy WAR on Tomcat Slave') {
+stage('Deploy WAR on Tomcat Slave') {
   agent { label 'slave-1' }
   steps {
+    unstash name: 'warfile'
     sh '''
-      cp project/target/LoginWebApp.war /mnt/apache-tomcat-10.1.42/webapps/
-
-      # Simple start command (won't fail if already started)
+      cp target/LoginWebApp.war /mnt/apache-tomcat-10.1.42/webapps/
       /mnt/apache-tomcat-10.1.42/bin/startup.sh || true
     '''
   }
 }
+
     }
 
     
