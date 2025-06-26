@@ -44,7 +44,7 @@ pipeline {
         }
 
         stage('Deploy to Tomcat on Slave') {
-            agent { label 'slave-1' }
+            agent { label 'dev' }
             steps {
                 unstash 'warfile'
                 sh '''
