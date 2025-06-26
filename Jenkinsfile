@@ -18,19 +18,10 @@ pipeline {
     }
 
     stages {
-        stage('Clone Project') {
-            agent { label 'built-in' }
-            steps {
-                dir('/mnt/project') {
-                    git url: 'https://github.com/Ashu2356/project.git', branch: 'master'
-                }
-            }
-        }
-
         stage('Configure DB Connection') {
             agent { label 'built-in' }
             steps {
-                dir('/mnt/project/src/main/webapp') {
+                dir("${env.WORKSPACE}/src/main/webapp") {
                     sh """
                         echo "Updating JDBC URL and credentials in userRegistration.jsp"
                         sed -i 's|jdbc:mysql://localhost:3306/test|jdbc:mysql://${DB_URL}:3306/${DB_NAME}|' userRegistration.jsp
@@ -45,7 +36,7 @@ pipeline {
         stage('Build WAR') {
             agent { label 'built-in' }
             steps {
-                dir('/mnt/project') {
+                dir("${env.WORKSPACE}") {
                     sh 'mvn clean package'
                     stash name: 'warfile', includes: 'target/*.war'
                 }
