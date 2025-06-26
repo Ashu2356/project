@@ -5,6 +5,10 @@ pipeline {
         maven 'apache-maven-3.9.10'
     }
 
+    options {
+        skipDefaultCheckout(true) // Prevent auto-checkout on all nodes
+    }
+
     environment {
         TOMCAT_HOME = '/mnt/server/apache-tomcat-10.1.42'
         DB_URL = 'database-1.cbqy4wmkgmg5.ap-south-1.rds.amazonaws.com'
